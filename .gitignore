@@ -1,0 +1,41 @@
+# Arquivos de cache do Python --
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ambiente virtual (virtualenv) --
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+env.bak/
+
+# Banco de dados e logs --
+*.log
+*.sqlite3
+*.db
+
+# Configurações do editor (VS Code, PyCharm, etc.) --
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Arquivos do Poetry (Cache e exportações locais) --
+.poetry/
+dist/
+build/
+
+# Variáveis de Ambiente e Segredos --
+.env
+.env.local
+.env.*.local
+
+# Logs e Dados temporários do PostgreSQL / Docker
+.pgdata/
+*.sql.gz
+
+# Arquivos temporários do Sistema Operacional
+.DS_Store
+Thumbs.db
