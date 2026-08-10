@@ -1,5 +1,7 @@
 import html
 import re
+import hashlib
+from datetime import datetime
 
 
 def transformar_em_html(texto):
@@ -34,3 +36,13 @@ def achar_datas(texto):
         datas += re.findall(padrao, texto, flags=re.IGNORECASE)
 
     return ", ".join(sorted(set(datas)))
+
+
+def gerar_hash(texto):
+    if not texto:
+        return ""
+    return hashlib.sha256(texto.encode("utf-8")).hexdigest()
+
+
+def obter_data_coleta():
+    return datetime.now().isoformat()

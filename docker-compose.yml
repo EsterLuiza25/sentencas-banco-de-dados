@@ -2,10 +2,27 @@
 services:
   app:
     build: .
+    image: sentencas-banco-de-dados-app:latest
     container_name: sentencas_app
     env_file:
-      - .env 
+      - .env
     environment:
-      - DB_HOST=host.docker.internal
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      DB_HOST: postgres_db
+    depends_on:
+      - postgres_db
+
+  postgres_db:
+    image: postgres:15-alpine
+    container_name: sentencas_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

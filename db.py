@@ -14,16 +14,17 @@ def criar_banco():
         CREATE TABLE IF NOT EXISTS sentencas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             numero_processo TEXT UNIQUE NOT NULL,
-            id_sentenca TEXT,
             assuntos TEXT,
-            assunto_principal TEXT,
             tribunal_orgao TEXT,
             classe_processual TEXT,
             data_juntada TEXT,
             texto_sentenca_raw TEXT,
             texto_sentenca_html TEXT,
             datas_extraidas TEXT,
-            termo_busca_origem TEXT
+            termo_busca_origem TEXT,
+            data_coleta TEXT,
+            hash_conteudo TEXT,
+            url_origem TEXT
         )
     """)
 
@@ -87,41 +88,44 @@ def salvar_sentenca(dados):
     cursor.execute("""
         INSERT INTO sentencas (
             numero_processo,
-            id_sentenca,
             assuntos,
-            assunto_principal,
             tribunal_orgao,
             classe_processual,
             data_juntada,
             texto_sentenca_raw,
             texto_sentenca_html,
             datas_extraidas,
-            termo_busca_origem
+            termo_busca_origem,
+            data_coleta,
+            hash_conteudo,
+            url_origem
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(numero_processo) DO UPDATE SET
-            id_sentenca = excluded.id_sentenca,
             assuntos = excluded.assuntos,
-            assunto_principal = excluded.assunto_principal,
             tribunal_orgao = excluded.tribunal_orgao,
             classe_processual = excluded.classe_processual,
             data_juntada = excluded.data_juntada,
             texto_sentenca_raw = excluded.texto_sentenca_raw,
             texto_sentenca_html = excluded.texto_sentenca_html,
             datas_extraidas = excluded.datas_extraidas,
-            termo_busca_origem = excluded.termo_busca_origem
+            termo_busca_origem = excluded.termo_busca_origem,
+            data_coleta = excluded.data_coleta,
+            hash_conteudo = excluded.hash_conteudo,
+            url_origem = excluded.url_origem
     """, (
-        dados["numero_processo"],
-        dados["id_sentenca"],
-        dados["assuntos"],
-        dados["assunto_principal"],
-        dados["tribunal_orgao"],
-        dados["classe_processual"],
-        dados["data_juntada"],
-        dados["texto_sentenca_raw"],
-        dados["texto_sentenca_html"],
-        dados["datas_extraidas"],
-        dados["termo_busca_origem"],
+        dados.get("numero_processo"),
+        dados.get("assuntos"),
+        dados.get("tribunal_orgao"),
+        dados.get("classe_processual"),
+        dados.get("data_juntada"),
+        dados.get("texto_sentenca_raw"),
+        dados.get("texto_sentenca_html"),
+        dados.get("datas_extraidas"),
+        dados.get("termo_busca_origem"),
+        dados.get("data_coleta"),
+        dados.get("hash_conteudo"),
+        dados.get("url_origem"),
     ))
 
     conexao.commit()

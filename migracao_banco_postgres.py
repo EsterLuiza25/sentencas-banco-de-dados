@@ -11,26 +11,32 @@ PG_HOST = os.getenv("DB_HOST", "localhost")
 PG_PORT = os.getenv("DB_PORT", "5432")
 PG_DB = os.getenv("DB_NAME", "")
 PG_USER = os.getenv("DB_USER", "postgres")
-PG_PASSWORD = os.getenv("DB_PASSWORD", "")  
+PG_PASSWORD = os.getenv("DB_PASSWORD", "")
+
 
 def criar_tabela_postgres(cursor_pg):
-   
-    print(" Criando estrutura no PostgreSQL")
-    
-    
+    print("Criando estrutura no PostgreSQL")
+
+    cursor_pg.execute("DROP TABLE IF EXISTS sentencas CASCADE;")
+
     cursor_pg.execute("""
     CREATE TABLE IF NOT EXISTS sentencas (
         id SERIAL PRIMARY KEY,
         numero_processo VARCHAR(100) UNIQUE NOT NULL,
+        assuntos TEXT,
         tribunal_orgao VARCHAR(255),
+        classe_processual VARCHAR(255),
+        data_juntada VARCHAR(50),
         texto_sentenca_raw TEXT,
         texto_sentenca_html TEXT,
         datas_extraidas TEXT,
-        termo_busca_origem VARCHAR(100)
+        termo_busca_origem VARCHAR(100),
+        data_coleta VARCHAR(50),
+        hash_conteudo VARCHAR(64),
+        url_origem TEXT
     );
     """)
-    
-    
+
     cursor_pg.execute("""
     CREATE TABLE IF NOT EXISTS controle_fluxo (
         termo VARCHAR(100) PRIMARY KEY,
@@ -39,21 +45,21 @@ def criar_tabela_postgres(cursor_pg):
     );
     """)
 
+
 def migrar_dados():
-    
-    print("📖 Lendo dados do arquivo SQLite (sentencas.db)...")
+    print("Lendo dados do arquivo SQLite (sentencas.db)...")
     conn_sqlite = sqlite3.connect("sentencas.db")
     cursor_sqlite = conn_sqlite.cursor()
 
-    
     cursor_sqlite.execute("""
-        SELECT numero_processo, tribunal_orgao, texto_sentenca_raw, 
-               texto_sentenca_html, datas_extraidas, termo_busca_origem 
+        SELECT numero_processo, assuntos, tribunal_orgao, classe_processual,
+               data_juntada, texto_sentenca_raw, texto_sentenca_html, 
+               datas_extraidas, termo_busca_origem, data_coleta, 
+               hash_conteudo, url_origem 
         FROM sentencas;
     """)
     sentencas = cursor_sqlite.fetchall()
 
-    
     cursor_sqlite.execute("""
         SELECT termo, ultima_pagina_coletada, finalizado 
         FROM controle_fluxo;
@@ -62,8 +68,7 @@ def migrar_dados():
 
     print(f"Foram encontradas {len(sentencas)} sentenças no SQLite para migração.")
 
-   
-    print(" Conectando ao PostgreSQL...")
+    print("Conectando ao PostgreSQL...")
     try:
         conn_pg = psycopg2.connect(
             host=PG_HOST,
@@ -74,26 +79,25 @@ def migrar_dados():
         )
         cursor_pg = conn_pg.cursor()
     except Exception as e:
-        print(f" Erro ao conectar no PostgreSQL: {e}")
+        print(f"Erro ao conectar no PostgreSQL: {e}")
         return
 
-   
     criar_tabela_postgres(cursor_pg)
 
-    
     if sentencas:
-        print(" Transferindo sentenças em lotes...")
+        print("Transferindo sentenças em lotes...")
         sql_insert_sentencas = """
         INSERT INTO sentencas (
-            numero_processo, tribunal_orgao, texto_sentenca_raw, 
-            texto_sentenca_html, datas_extraidas, termo_busca_origem
+            numero_processo, assuntos, tribunal_orgao, classe_processual,
+            data_juntada, texto_sentenca_raw, texto_sentenca_html, 
+            datas_extraidas, termo_busca_origem, data_coleta, 
+            hash_conteudo, url_origem
         ) VALUES %s
         ON CONFLICT (numero_processo) DO NOTHING;
         """
-        
+
         execute_values(cursor_pg, sql_insert_sentencas, sentencas, page_size=1000)
 
-    
     if controle:
         print("Transferindo histórico de controle de fluxo...")
         sql_insert_controle = """
@@ -105,17 +109,16 @@ def migrar_dados():
         """
         execute_values(cursor_pg, sql_insert_controle, controle)
 
-    
     conn_pg.commit()
 
-    print("\n MIGRAÇÃO CONCLUÍDA COM SUCESSO!")
-    print(f" {len(sentencas)} sentenças foram inseridas/verificadas no PostgreSQL.")
+    print("\nMIGRAÇÃO CONCLUÍDA COM SUCESSO!")
+    print(f"{len(sentencas)} sentenças foram inseridas/verificadas no PostgreSQL.")
 
-    
     cursor_sqlite.close()
     conn_sqlite.close()
     cursor_pg.close()
     conn_pg.close()
+
 
 if __name__ == "__main__":
     migrar_dados()

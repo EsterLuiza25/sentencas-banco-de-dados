@@ -37,9 +37,7 @@ def preparar_sentenca(item, termo):
 
     return {
         "numero_processo": item.get("num_processo"),
-        "id_sentenca": item.get("id_sentenca"),
         "assuntos": json.dumps(item.get("des_assuntos", []), ensure_ascii=False),
-        "assunto_principal": item.get("des_assunto_principal"),
         "tribunal_orgao": item.get("des_orgao"),
         "classe_processual": item.get("des_classe"),
         "data_juntada": item.get("data_juntada"),
@@ -47,6 +45,9 @@ def preparar_sentenca(item, termo):
         "texto_sentenca_html": parser.transformar_em_html(texto),
         "datas_extraidas": parser.achar_datas(texto),
         "termo_busca_origem": termo,
+        "data_coleta": parser.obter_data_coleta(),
+        "hash_conteudo": parser.gerar_hash(texto),
+        "url_origem": item.get("url", "")
     }
 
 
