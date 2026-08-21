@@ -1,9 +1,15 @@
-import sqlite3
-
-ARQUIVO_BANCO = "sentencas.db"
+import os
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 def conectar():
-    return sqlite3.connect(ARQUIVO_BANCO)
+    return psycopg2.connect(
+        host=os.getenv("DB_HOST", "localhost"),
+        database=os.getenv("DB_NAME", ""),
+        user=os.getenv("DB_USER", "postgres"),
+        password=os.getenv("DB_PASSWORD", ""),
+        port=os.getenv("DB_PORT", "5433")
+    )
 
 
 def criar_banco():
@@ -12,7 +18,7 @@ def criar_banco():
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS sentencas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             numero_processo TEXT UNIQUE NOT NULL,
             assuntos TEXT,
             tribunal_orgao TEXT,
@@ -25,7 +31,7 @@ def criar_banco():
             data_coleta TEXT,
             hash_conteudo TEXT,
             url_origem TEXT
-        )
+        );
     """)
 
     cursor.execute("""
@@ -33,7 +39,7 @@ def criar_banco():
             termo TEXT PRIMARY KEY,
             cursor TEXT,
             finalizado INTEGER DEFAULT 0
-        )
+        );
     """)
 
     cursor.execute("""
@@ -42,10 +48,11 @@ def criar_banco():
             ultima_pagina_coletada INTEGER DEFAULT 0,
             search_after_value TEXT,
             finalizado INTEGER DEFAULT 0
-        )
+        );
     """)
 
     conexao.commit()
+    cursor.close()
     conexao.close()
 
 
@@ -53,9 +60,10 @@ def buscar_progresso(termo):
     conexao = conectar()
     cursor = conexao.cursor()
 
-    cursor.execute("SELECT cursor, finalizado FROM progresso WHERE termo = ?", (termo,))
+    cursor.execute("SELECT cursor, finalizado FROM progresso WHERE termo = %s;", (termo,))
     resultado = cursor.fetchone()
 
+    cursor.close()
     conexao.close()
 
     if not resultado:
@@ -71,62 +79,85 @@ def salvar_progresso(termo, cursor_atual, finalizado=False):
 
     cursor.execute("""
         INSERT INTO progresso (termo, cursor, finalizado)
-        VALUES (?, ?, ?)
-        ON CONFLICT(termo) DO UPDATE SET
-            cursor = excluded.cursor,
-            finalizado = excluded.finalizado
+        VALUES (%s, %s, %s)
+        ON CONFLICT (termo) DO UPDATE SET
+            cursor = EXCLUDED.cursor,
+            finalizado = EXCLUDED.finalizado;
     """, (termo, cursor_atual, 1 if finalizado else 0))
 
     conexao.commit()
+    cursor.close()
     conexao.close()
 
 
 def salvar_sentenca(dados):
+
     conexao = conectar()
     cursor = conexao.cursor()
 
-    cursor.execute("""
-        INSERT INTO sentencas (
-            numero_processo,
-            assuntos,
-            tribunal_orgao,
-            classe_processual,
-            data_juntada,
-            texto_sentenca_raw,
-            texto_sentenca_html,
-            datas_extraidas,
-            termo_busca_origem,
-            data_coleta,
-            hash_conteudo,
-            url_origem
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(numero_processo) DO UPDATE SET
-            assuntos = excluded.assuntos,
-            tribunal_orgao = excluded.tribunal_orgao,
-            classe_processual = excluded.classe_processual,
-            data_juntada = excluded.data_juntada,
-            texto_sentenca_raw = excluded.texto_sentenca_raw,
-            texto_sentenca_html = excluded.texto_sentenca_html,
-            datas_extraidas = excluded.datas_extraidas,
-            termo_busca_origem = excluded.termo_busca_origem,
-            data_coleta = excluded.data_coleta,
-            hash_conteudo = excluded.hash_conteudo,
-            url_origem = excluded.url_origem
-    """, (
-        dados.get("numero_processo"),
-        dados.get("assuntos"),
-        dados.get("tribunal_orgao"),
-        dados.get("classe_processual"),
-        dados.get("data_juntada"),
-        dados.get("texto_sentenca_raw"),
-        dados.get("texto_sentenca_html"),
-        dados.get("datas_extraidas"),
-        dados.get("termo_busca_origem"),
-        dados.get("data_coleta"),
-        dados.get("hash_conteudo"),
-        dados.get("url_origem"),
-    ))
+    cursor.execute(
+        "SELECT id, hash_conteudo, data_juntada FROM sentencas WHERE numero_processo = %s;",
+        (dados.get("numero_processo"),)
+    )
+    registro_existente = cursor.fetchone()
+
+    houve_mudanca = False
+
+    if registro_existente is None:
+        cursor.execute("""
+            INSERT INTO sentencas (
+                numero_processo, assuntos, tribunal_orgao, classe_processual,
+                data_juntada, texto_sentenca_raw, texto_sentenca_html,
+                datas_extraidas, termo_busca_origem, data_coleta,
+                hash_conteudo, url_origem
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+        """, (
+            dados.get("numero_processo"),
+            dados.get("assuntos"),
+            dados.get("tribunal_orgao"),
+            dados.get("classe_processual"),
+            dados.get("data_juntada"),
+            dados.get("texto_sentenca_raw"),
+            dados.get("texto_sentenca_html"),
+            dados.get("datas_extraidas"),
+            dados.get("termo_busca_origem"),
+            dados.get("data_coleta"),
+            dados.get("hash_conteudo"),
+            dados.get("url_origem"),
+        ))
+        houve_mudanca = True
+    else:
+        id_banco, hash_antigo, juntada_antiga = registro_existente
+        if (hash_antigo != dados.get("hash_conteudo")) or (juntada_antiga != dados.get("data_juntada")):
+            cursor.execute("""
+                UPDATE sentencas SET
+                    assuntos = %s,
+                    tribunal_orgao = %s,
+                    classe_processual = %s,
+                    data_juntada = %s,
+                    texto_sentenca_raw = %s,
+                    texto_sentenca_html = %s,
+                    datas_extraidas = %s,
+                    data_coleta = %s,
+                    hash_conteudo = %s,
+                    url_origem = %s
+                WHERE id = %s;
+            """, (
+                dados.get("assuntos"),
+                dados.get("tribunal_orgao"),
+                dados.get("classe_processual"),
+                dados.get("data_juntada"),
+                dados.get("texto_sentenca_raw"),
+                dados.get("texto_sentenca_html"),
+                dados.get("datas_extraidas"),
+                dados.get("data_coleta"),
+                dados.get("hash_conteudo"),
+                dados.get("url_origem"),
+                id_banco
+            ))
+            houve_mudanca = True
 
     conexao.commit()
+    cursor.close()
     conexao.close()
+    return houve_mudanca

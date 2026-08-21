@@ -4,7 +4,6 @@ import client
 import db
 import parser
 
-
 TERMOS = [
     "Crimes Militares",
     "Deserção",
@@ -26,10 +25,21 @@ TERMOS = [
     "Lesão Corporal",
     "Recusa de Obediência",
     "Extravio de Material Militar",
+    "Motim",
+    "Revolta",
+    "Prevaricação",
+    "Concussão",
+    "Corrupção Passiva",
+    "Uso Indevido de Uniforme",
+    "Dano em Material Bélico",
+    "Desrespeito a Superior",
+    "Ofensa Aviltante a Inferior",
+    "Porte Ilegal de Arma de Fogo",
 ]
 
 TAMANHO_LOTE = 20
 PAUSA_SEGUNDOS = 1
+MAX_PAGINAS_SEM_NOVIDADE = 3
 
 
 def preparar_sentenca(item, termo):
@@ -51,55 +61,66 @@ def preparar_sentenca(item, termo):
     }
 
 
-def coletar_termo(termo):
-    cursor, finalizado = db.buscar_progresso(termo)
-
-    if finalizado:
-        print(f"Termo ja concluido: {termo}")
-        return
-
+def sincronizar_diariamente(termo):
+    cursor = None
     pagina = 1
+    paginas_sem_novidade = 0
+    total_novos_termo = 0
+
+    print(f"\n--- Sincronizando Termo: '{termo}' ---")
 
     while True:
-        print(f"Buscando {termo} - pagina {pagina}")
-
         resposta = client.buscar_sentencas(termo, TAMANHO_LOTE, cursor)
         sentencas = resposta.get("sentencas", [])
-        total = resposta.get("total", 0)
+        total_api = resposta.get("total", 0)
 
         if not sentencas:
-            db.salvar_progresso(termo, cursor, finalizado=True)
-            print(f"Fim do termo: {termo}")
-            return
+            print(f"[{termo}] Sem mais registros retornados pela API.")
+            break
 
+        novos_nesta_pagina = 0
         for item in sentencas:
             dados = preparar_sentenca(item, termo)
-
             if dados["numero_processo"]:
-                db.salvar_sentenca(dados)
+                if db.salvar_sentenca(dados):
+                    novos_nesta_pagina += 1
+
+        total_novos_termo += novos_nesta_pagina
+        print(f"[{termo}] Pág {pagina}: {len(sentencas)} avaliadas | {novos_nesta_pagina} inseridas/atualizadas (Total na base do tribunal: {total_api})")
+
+        if novos_nesta_pagina == 0:
+            paginas_sem_novidade += 1
+        else:
+            paginas_sem_novidade = 0  
+
+        if paginas_sem_novidade >= MAX_PAGINAS_SEM_NOVIDADE:
+            print(f"[{termo}] {MAX_PAGINAS_SEM_NOVIDADE} páginas consecutivas sem novidades. Termo totalmente sincronizado.")
+            break
 
         cursor = sentencas[-1].get("@timestamp")
-        db.salvar_progresso(termo, cursor, finalizado=False)
-
-        print(f"Salvas {len(sentencas)} sentencas. Total informado pela API: {total}")
 
         if len(sentencas) < TAMANHO_LOTE:
-            db.salvar_progresso(termo, cursor, finalizado=True)
-            print(f"Fim do termo: {termo}")
-            return
+            print(f"[{termo}] Fim do catálogo na API.")
+            break
 
         pagina += 1
         time.sleep(PAUSA_SEGUNDOS)
 
+    print(f"Resultado para '{termo}': {total_novos_termo} alterações/novidades salvas.")
+
 
 def main():
     db.criar_banco()
-    print("Coleta iniciada.")
+    print("=====================================================")
+    print("  INICIANDO ATUALIZAÇÃO DIÁRIA DE SENTENÇAS (30 TERMOS) ")
+    print("=====================================================")
 
     for termo in TERMOS:
-        coletar_termo(termo)
+        sincronizar_diariamente(termo)
 
-    print("Coleta finalizada.")
+    print("\n=====================================================")
+    print("  SINCRONIZAÇÃO COMPLETA: BANCO ATUALIZADO COM SUCESSO ")
+    print("=====================================================")
 
 
 if __name__ == "__main__":

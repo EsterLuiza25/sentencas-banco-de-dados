@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyo
 
 # Ambiente virtual (virtualenv) --
 .venv/
@@ -9,12 +10,15 @@ venv/
 env/
 ENV/
 env.bak/
-env.bak/
 
-# Banco de dados e logs --
+# Banco de dados locais e logs --
 *.log
 *.sqlite3
 *.db
+logs_execucao.txt
+
+# Scripts com caminhos absolutos locais do Windows
+executar_coleta.bat
 
 # Configurações do editor (VS Code, PyCharm, etc.) --
 .vscode/
@@ -22,20 +26,23 @@ env.bak/
 *.swp
 *.swo
 
-# Arquivos do Poetry (Cache e exportações locais) --
+# Arquivos de empacotamento e build --
 .poetry/
 dist/
 build/
+*.egg-info/
 
 # Variáveis de Ambiente e Segredos --
 .env
 .env.local
 .env.*.local
 
-# Logs e Dados temporários do PostgreSQL / Docker
+# Logs e Dados temporários do PostgreSQL / Docker --
 .pgdata/
 *.sql.gz
+postgres_data/
 
-# Arquivos temporários do Sistema Operacional
+# Arquivos temporários do Sistema Operacional --
 .DS_Store
 Thumbs.db
+desktop.ini

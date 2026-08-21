@@ -1,0 +1,13 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.venv
+venv
+.env
+*.sqlite3
+*.db
+logs_execucao.txt
+executar_coleta.bat
+.git
+.gitignore
