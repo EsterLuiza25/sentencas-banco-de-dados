@@ -1,33 +1,45 @@
-# Coleta e Migração de Sentenças de Banco de Dados
+# Coleta, Atualização Incremental e Migração de Sentenças
+
+Projeto em Python desenvolvido para raspagem contínua, tratamento estruturado, deduplicação e persistência de sentenças judiciais em banco de dados PostgreSQL, com suporte a conteinerização via Docker e automação de rotinas diárias.
+
 ---
-Projeto em Python desenvolvido para raspagem, estruturação e migração de dados de sentenças judiciais para um banco de dados PostgreSQL.
+
+## Funcionalidades Principais
+
+* **Sincronização Diária Incremental:** Identifica novos processos publicados e atualiza automaticamente decisões existentes com novas juntadas ou alterações de conteúdo.
+* **Cobertura Temática Expandida:** Monitoramento contínuo de 30 crimes e termos militares jurídicos.
+* **Tratamento e Extração de Metadados:** Parsing de texto bruto, sanitização em HTML, cálculo de hash de integridade e extração regex de datas relevantes.
+* **Persistência Confiável:** Armazenamento relacional estruturado no PostgreSQL com prevenção de duplicatas via `UNIQUE` constraints e upserts idempotentes.
+* **Ambiente Conteinerizado:** Orquestração completa de banco e aplicação via Docker e Docker Compose com verificações de integridade (`healthcheck`).
+* **Automação em Segundo Plano:** Suporte a agendamento automático diário via Task Scheduler (Windows) / rotinas cron.
+
 ---
-## Descrição
----
-O sistema realiza a extração automatizada de sentenças, faz o tratamento do conteúdo textual bruto (HTML e texto sem formatação), extrai metadados como datas relevantes e deduplica os processos. Os dados coletados são salvos em um banco relacional PostgreSQL para consulta e análise.
 
 ## Tecnologias Utilizadas
+
+* **Python 3.14+**
+* **Poetry** (Gerenciamento de dependências e ambiente)
+* **PostgreSQL 15+** (Banco de dados relacional)
+* **Docker & Docker Compose** (Conteinerização e orquestração)
+* **psycopg2-binary** (Driver de conexão com PostgreSQL)
+* **BeautifulSoup4** (Sanitização e processamento de HTML)
+* **Requests** (Comunicação HTTP e integração com a API)
+
 ---
-* Python 3.12+
-* Poetry (Gerenciamento de dependências e ambientes virtuais)
-* PostgreSQL (Banco de dados relacional)
-* psycopg2-binary (Driver de conexão PostgreSQL)
-* BeautifulSoup4 (Processamento de dados HTML)
-* Requests (Requisições HTTP)
-* SQLite (Armazenamento temporário local)
----
+
 ## Estrutura do Projeto
 
 ```text
 sentencas-banco-de-dados/
-├── .venv/                      # Ambiente virtual gerenciado pelo Poetry
-├── client.py                   # Módulo de requisições à API/servidor
-├── conexao.py                  # Script de teste de conexão com o PostgreSQL
-├── db.py                       # Gerenciamento de tabelas e operações de banco
-├── main.py                     # Script principal de execução da coleta
-├── migracao_banco_postgres.py  # Script de migração de dados (SQLite para Postgres)
-├── parser.py                   # Extração e tratamento de texto/datas
-├── poetry.lock                 # Trava de versões das dependências
-├── pyproject.toml              # Configuração do projeto e dependências Poetry
-├── README.md                   # Documentação do projeto
-└── requirements.txt            # Lista de dependências legada
+├── .dockerignore              # Arquivos excluídos da imagem Docker
+├── .gitignore                 # Arquivos ignorados pelo Git
+├── docker-compose.yml         # Orquestração dos serviços (App + PostgreSQL)
+├── Dockerfile                 # Definição do container da aplicação
+├── client.py                  # Integração e consumo da API do tribunal
+├── db.py                      # Camada de banco: tabelas, conexões e upserts
+├── main.py                    # Pipeline de execução e controle incremental
+├── parser.py                  # Sanitização textual, hash e extração de datas
+├── poetry.lock                # Trava de versões exatas das dependências
+├── pyproject.toml             # Configurações do projeto e dependências Poetry
+├── README.md                  # Documentação do projeto
+└── requirements.txt           # Export de dependências
