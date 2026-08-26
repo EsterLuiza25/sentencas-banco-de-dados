@@ -1,6 +1,11 @@
 import os
+from pathlib import Path
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from dotenv import load_dotenv
+
+env_path = Path(__file__).resolve().parent / ".env"
+load_dotenv(dotenv_path=env_path)
 
 def conectar():
     return psycopg2.connect(
