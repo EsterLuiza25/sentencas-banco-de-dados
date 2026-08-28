@@ -13,13 +13,15 @@ def conectar():
         database=os.getenv("DB_NAME", ""),
         user=os.getenv("DB_USER", "postgres"),
         password=os.getenv("DB_PASSWORD", ""),
-        port=os.getenv("DB_PORT", "5433")
+        port=os.getenv("DB_PORT", "5432")
     )
 
 
 def criar_banco():
     conexao = conectar()
     cursor = conexao.cursor()
+
+
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS sentencas (
