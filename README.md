@@ -1,12 +1,12 @@
 # Coleta, Atualização Incremental e Migração de Sentenças
 
-Projeto em Python desenvolvido para raspagem contínua, tratamento estruturado, deduplicação e persistência de sentenças judiciais em banco de dados PostgreSQL, com suporte a conteinerização via Docker e automação de rotinas diárias.
+Pipeline de dados robusto desenvolvido em Python voltado para raspagem contínua, sanitização textual e ingestão incremental de sentenças judiciais em banco de dados relacional PostgreSQL. O sistema conta com mecanismo nativo de deduplicação e idempotência via chave única, estratégia de parada antecipada (early stopping) para otimização de requisições de rede e persistência em ambiente isolado via Docker Compose. Projetado para operação autônoma diária através do Agendador de Tarefas do Windows, assegurando integridade histórica, monitoramento via logs estruturados e alta performance no tratamento de jurisprudência criminal e militar.
 
 ---
 
 ## 1. Visão Geral da Arquitetura
 
-O sistema atua como uma esteira contínua de extração e monitoramento de jurisprudência criminal e militar. O pipeline realiza varreduras parametrizadas sobre um catálogo de 30 termos jurídicos distintos, identificando decisões recentes disponibilizadas pelo tribunal, tratando o texto bruto e aplicando regras de deduplicação antes da gravação no banco de dados.
+O sistema atua como uma esteira contínua de extração e monitoramento de jurisprudência militar. O pipeline realiza varreduras parametrizadas sobre um catálogo de 30 termos jurídicos distintos, identificando decisões recentes disponibilizadas pelo tribunal, tratando o texto bruto e aplicando regras de deduplicação antes da gravação no banco de dados.
 
 ```text
 [ Fonte Externa / Tribunal ]
