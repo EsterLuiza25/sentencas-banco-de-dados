@@ -4,6 +4,27 @@ Projeto em Python desenvolvido para raspagem contínua, tratamento estruturado, 
 
 ---
 
+## 1. Visão Geral da Arquitetura
+
+O sistema atua como uma esteira contínua de extração e monitoramento de jurisprudência criminal e militar. O pipeline realiza varreduras parametrizadas sobre um catálogo de 30 termos jurídicos distintos, identificando decisões recentes disponibilizadas pelo tribunal, tratando o texto bruto e aplicando regras de deduplicação antes da gravação no banco de dados.
+
+```text
+[ Fonte Externa / Tribunal ]
+              │
+              ▼ (Requisições HTTP Paginadas)
+     [ client.py ] 
+              │
+              ▼ (Markup HTML Bruto)
+     [ parser.py ] ───► Sanitização, Regex de Datas e Extração Estruturada
+              │
+              ▼ (Dicionários Normalizados)
+       [ main.py ] ───► Controle de Fluxo e Parada Antecipada (Janela de 3 Páginas)
+              │
+              ▼ (Upsert Idempotente na Porta 5432)
+   [ PostgreSQL 15 ] ───► Chave Única (numero_processo) + Volume Docker Persistente
+```
+
+
 ## Funcionalidades Principais
 
 * **Sincronização Diária Incremental:** Identifica novos processos publicados e atualiza automaticamente decisões existentes com novas juntadas ou alterações de conteúdo.
@@ -22,7 +43,7 @@ Projeto em Python desenvolvido para raspagem contínua, tratamento estruturado, 
 * **PostgreSQL 15+** (Banco de dados relacional)
 * **Docker & Docker Compose** (Conteinerização e orquestração)
 * **psycopg2-binary** (Driver de conexão com PostgreSQL)
-* **BeautifulSoup4** (Sanitização e processamento de HTML)
+* **Re e HTML** (Sanitização e processamento de HTML)
 * **Requests** (Comunicação HTTP e integração com a API)
 
 ---
