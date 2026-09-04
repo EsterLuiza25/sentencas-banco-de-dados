@@ -64,3 +64,25 @@ sentencas-banco-de-dados/
 ├── pyproject.toml             # Configurações do projeto e dependências Poetry
 ├── README.md                  # Documentação do projeto
 └── requirements.txt           # Export de dependências
+```
+
+---
+ 
+## Referências e Documentação Utilizada
+ 
+A concepção da arquitetura, padrões de resiliência e implementação técnica se basearam nas seguintes documentações e padrões oficiais:
+ 
+### Linguagem e Ecossistema Python
+* [Python 3 Documentation](https://docs.python.org/3/) - Referência oficial da linguagem, manipulação de arquivos com `pathlib` e subprocessos.
+* [Poetry Documentation](https://python-poetry.org/docs/) - Padrões de empacotamento, isolamento de ambientes virtuais e resolução determinística de dependências via lockfiles.
+* [psycopg2 Documentation](https://www.psycopg.org/docs/) - Driver PostgreSQL para Python, gerenciamento de transações, cursores e execução parametrizada segura.
+* [python-dotenv Documentation](https://github.com/theskumar/python-dotenv) - Boas práticas para carregamento e isolamento de variáveis de ambiente baseadas na metodologia The Twelve-Factor App.
+ 
+### Banco de Dados e Persistência
+* [PostgreSQL 15 Documentation](https://www.postgresql.org/docs/15/) - Modelagem de dados, restrições de integridade (`UNIQUE`), índices e sintaxe de upsert via cláusula `ON CONFLICT DO UPDATE`.
+* [PostgreSQL Window Functions](https://www.postgresql.org/docs/15/tutorial-window.html) - Utilização de `ROW_NUMBER()` e particionamento para análise e auditoria de distribuição de termos.
+ 
+### Infraestrutura e Automação
+* [Docker Documentation](https://docs.docker.com/) - Construção de imagens com Dockerfile, boas práticas de camadas e imagens Alpine.
+* [Docker Compose Specification](https://docs.docker.com/compose/) - Orquestração de múltiplos serviços, configuração de redes internas tipo bridge, volumes persistentes e monitoramento de dependência com `healthcheck`.
+* [Microsoft Learn: Agendador de Tarefas do Windows](https://learn.microsoft.com/pt-br/windows/win32/taskschd/task-scheduler-start-page) - Configuração de tarefas agendadas, scripts `.bat` e redirecionamento de fluxos de saída/erros (`stdout`/`stderr`) para arquivos de log.
