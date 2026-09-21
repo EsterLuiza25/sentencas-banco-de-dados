@@ -11,17 +11,20 @@ O sistema atua como uma esteira contínua de extração e monitoramento de juris
 ```text
 [ Fonte Externa / Tribunal ]
               │
-              ▼ (Requisições HTTP Paginadas)
-     [ client.py ] 
+              ▼ (Pedidos HTTP Paginados)
+     [ src/infra/http/client.py ] 
               │
               ▼ (Markup HTML Bruto)
-     [ parser.py ] ───► Sanitização, Regex de Datas e Extração Estruturada
+    [ src/infra/parsers/parser.py ] ───► Sanitização, Regex de Datas e Extração
               │
-              ▼ (Dicionários Normalizados)
-       [ main.py ] ───► Controle de Fluxo e Parada Antecipada (Janela de 3 Páginas)
+              ▼ (Estruturas Normalizadas)
+  [ src/presentation/main.py ] ────────► Orquestração do Fluxo e Paragem Antecipada
               │
               ▼ (Upsert Idempotente na Porta 5432)
-   [ PostgreSQL 15 ] ───► Chave Única (numero_processo) + Volume Docker Persistente
+   [ src/infra/database/db.py ] ───────► Conexão via psycopg2
+              │
+              ▼
+       [ PostgreSQL 15 ] ──────────────► Chave Única + Volume Docker Persistente
 ```
 
 
@@ -52,18 +55,34 @@ O sistema atua como uma esteira contínua de extração e monitoramento de juris
 
 ```text
 sentencas-banco-de-dados/
-├── .dockerignore              # Arquivos excluídos da imagem Docker
-├── .gitignore                 # Arquivos ignorados pelo Git
-├── docker-compose.yml         # Orquestração dos serviços (App + PostgreSQL)
-├── Dockerfile                 # Definição do container da aplicação
-├── client.py                  # Integração e consumo da API do tribunal
-├── db.py                      # Camada de banco: tabelas, conexões e upserts
-├── main.py                    # Pipeline de execução e controle incremental
-├── parser.py                  # Sanitização textual, hash e extração de datas
-├── poetry.lock                # Trava de versões exatas das dependências
-├── pyproject.toml             # Configurações do projeto e dependências Poetry
-├── README.md                  # Documentação do projeto
-└── requirements.txt           # Export de dependências
+├── src/
+│   ├── application/               # Casos de uso e orquestração de fluxos (preparado para expansão)
+│   ├── domain/                    # Entidades de negócio e contratos de repositório
+│   ├── infra/                     # Implementações técnicas e integrações externas
+│   │   ├── database/
+│   │   │   ├── conexao.py         # Gestão de pool e ligação à base de dados
+│   │   │   └── db.py              # DDL e operações de persistência/upsert
+│   │   ├── http/
+│   │   │   └── client.py          # Cliente HTTP para consumo de fontes externas
+│   │   ├── parsers/
+│   │   │   └── parser.py          # Sanitização de texto, hashes e regex de datas
+│   │   └── scripts/
+│   │       └── migraca_banco_postgres.py # Utilitários de migração
+│   └── presentation/              # Pontos de entrada da aplicação
+│       └── main.py                # Executável de orquestração do pipeline de coleta
+│
+├── tests/                         # Testes automatizados
+├── .dockerignore                  # Ficheiros excluídos da imagem Docker
+├── .env                           # Definições de ambiente locais (não versionado)
+├── .gitignore                     # Ficheiros ignorados pelo controlo de versões
+├── docker-compose.yml             # Orquestração do serviço PostgreSQL e rede
+├── Dockerfile                     # Construção do contentor da aplicação
+├── executar_coleta.bat            # Script de disparo para o Agendador de Tarefas
+├── logs_execucao.txt              # Saída estruturada das execuções periódicas
+├── poetry.lock                    # Ficheiro de bloqueio de versões exatas
+├── pyproject.toml                 # Metadados e dependências do projeto
+├── README.md                      # Documentação técnica do repositório
+└── requirements.txt               # Export de dependências legadas
 ```
 
 ---
