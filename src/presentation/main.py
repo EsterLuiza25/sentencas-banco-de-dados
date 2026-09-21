@@ -1,8 +1,8 @@
 import json
 import time
-import client
-import db
-import parser
+import src.infra.http.client as client
+import src.infra.database.db as db
+import src.infra.parsers.parser as parser
 
 TERMOS = [
     "Crimes Militares",
